@@ -276,6 +276,31 @@ BMais* retira(BMais *a, TChave chave, int t){
 	return remover(a, chave, t);
 }
 
+BMais* leArquivo(int t){
+	FILE *pt = fopen("arq_entrada_trab.txt", "r");
+	char linha[256], *token;
+	BMais *a = NULL;
+	TAlbum alb;
+	TChave ch;
+	while(fscanf(pt, " %[^\n]s", linha) != EOF){
+		printf("Linha lida: %s\nDivisao:\n", linha);
+		token = strtok(linha, "/");
+		strcpy(ch.artista, token);
+		token = strtok(NULL, "/");
+		ch.ano = atoi(token);
+		token = strtok(NULL, "/");
+		alb.nFaixas = atoi(token);
+		token = strtok(NULL, "/");
+		alb.tempo = atoi(token);
+		token = strtok(NULL, "/");
+		strcpy(alb.nome, token);
+		
+		a = insere(a, ch, alb, t);
+	}
+	fclose(pt);
+	return a;
+}
+
 TChave recebeChave(){
 	TChave novaChave;
 	printf("Digite os dados da chave:\n");
@@ -384,7 +409,7 @@ void buscaAlbum(BMais *a, TChave chave, int t){
 }
 
 int main(){
-    BMais *playlist = NULL;
+    BMais *playlist = leArquivo(2);
     int cmd;
     while(1){
         printf("-----------------------------\n"
