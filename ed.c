@@ -19,6 +19,11 @@ typedef struct node{
 	struct node **filho, *prev, *next;
 } BMais;
 
+typedef struct tipo_lista{
+	TChave chave;
+	struct tipo_lista *prox;
+} TLista;
+
 BMais *aloca(int t){
 	BMais *novo = (BMais*)malloc(sizeof(BMais));
 	novo->chave = (TChave*)malloc(sizeof(TChave)*(2*t-1));
@@ -283,7 +288,6 @@ BMais* leArquivo(int t){
 	TAlbum alb;
 	TChave ch;
 	while(fscanf(pt, " %[^\n]s", linha) != EOF){
-		printf("Linha lida: %s\nDivisao:\n", linha);
 		token = strtok(linha, "/");
 		strcpy(ch.artista, token);
 		token = strtok(NULL, "/");
@@ -350,7 +354,6 @@ void buscaObrasArtista(BMais* a, char *artista){
             for(i=0; i<aux->nch; i++)
                 if (strcmp(aux->chave[i].artista, artista) == 0)
                     printf("%s / %d / %d / %d / %s\n", aux->chave[i].artista, aux->chave[i].ano, aux->album[i].nFaixas, aux->album[i].tempo, aux->album[i].nome);
-
             aux = aux->next;
         }
         printf("\n");
@@ -359,23 +362,44 @@ void buscaObrasArtista(BMais* a, char *artista){
     buscaObrasArtista(a->filho[i], artista);
 }
 
-BMais* removerArtista(BMais *a, char *artista, int t){
-    int i = 0;
+TLista* insereLista(TLista* lista, TChave chave){
+	TLista *novo = (TLista*)malloc(sizeof(TLista));
+	strcpy(novo->chave.artista, chave.artista);
+	novo->chave.ano = chave.ano;
+	novo->prox = lista;
+	return novo;
+}
+
+TLista* listaArtista(BMais *a, char *artista){
+	int i = 0;
     while ((i < a->nch) && (strcmp(a->chave[i].artista, artista) < 0)){
         i++;
     }
     if (a->folha){
-        int j;
-        for(j=0; j<a->nch; j++)
-            if (strcmp(a->chave[j].artista, artista) == 0){
-                a = retira(a, a->chave[j], t);
-                removerArtista(a, artista, t);
-            }
-        printf("\n");
-        return a;
+		BMais* aux = a;
+		TLista *lista = NULL;
+		while(aux){
+			for(i=0; i<aux->nch; i++)
+				if (strcmp(aux->chave[i].artista, artista) == 0){
+					lista = insereLista(lista, aux->chave[i]);
+				}
+			aux = aux->next;
+		}
+		return lista;
     }
-    a->filho[i] = removerArtista(a->filho[i], artista, t);
-    return a;
+    return listaArtista(a->filho[i], artista);
+}
+
+BMais* removerArtista(BMais *a, char *artista, int t){
+	TLista *lista = listaArtista(a, artista);
+	TLista *aux;
+	while(lista){
+		a = retira(a, lista->chave, t);
+		aux = lista;
+		lista = lista->prox;
+		free(aux);
+	}
+	return a;
 }
 
 void imprimeLista(BMais *a){
@@ -424,30 +448,35 @@ int main(){
                "(7) Sair\n\n"
                "-----------------------------\n");
         scanf("%d", &cmd);
+		printf("\n");
         if(cmd == 0){
             imprimeLista(playlist);
         }
         else if(cmd == 1){
+			printf("Novo Album\n");
             playlist = novaChave(playlist, 2);
         }
         else if(cmd == 2){
+			printf("Remover Album\n");
             playlist = retira(playlist, recebeChave(), 2);
         }
         else if(cmd == 3){
+			printf("Editar Album\n");
             alteraChave(playlist, recebeChave(), 2);
         }
         else if(cmd == 4){
+			printf("Buscar Album\n");
             buscaAlbum(playlist, recebeChave(), 2);
         }
         else if(cmd == 5){
             char artista[31];
-            printf("Digite o nome do artista:\n");
+            printf("Digite o nome do artista que deseja buscar:\n");
             scanf(" %[^\n]s", artista);
             buscaObrasArtista(playlist, artista);
         }
         else if(cmd == 6){
             char artista[31];
-            printf("Digite o nome do artista:\n");
+            printf("Digite o nome do artista que deseja remover:\n");
             scanf(" %[^\n]s", artista);
             playlist = removerArtista(playlist, artista, 2);
         }
